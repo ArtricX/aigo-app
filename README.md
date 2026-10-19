@@ -44,5 +44,11 @@ npx tsc --noEmit        # 타입 검사
 ```
 알림·오디오는 Expo Go가 아니라 개발 빌드(`npx eas-cli@latest build --profile development`)에서 확인해야 해요.
 
+## 휴대폰에 시험 설치
+1. expo.dev에서 무료 가입 → Settings → Access tokens에서 토큰 만들기
+2. 이 저장소 Settings → Secrets and variables → Actions → New repository secret: 이름 `EXPO_TOKEN`, 값은 토큰
+3. Actions → **시험용 설치 파일 만들기** → Run workflow (preview)
+4. 끝나면 실행 화면 Summary의 링크를 휴대폰에서 열어 설치 ('출처를 알 수 없는 앱 설치' 한 번 허용)
+
 ## 출시
 구글 플레이 조직 계정(ArtricX, DUNS 번호 필요)으로 올려요. 앱 이름 `아이고`, 패키지 `com.artricx.aigo`.

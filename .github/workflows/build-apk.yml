@@ -1,0 +1,75 @@
+name: 시험용 설치 파일 만들기
+
+# 사용법: GitHub 저장소 → Actions → "시험용 설치 파일 만들기" → Run workflow
+# 저장소 Secrets에 EXPO_TOKEN(expo.dev → Settings → Access tokens)이 있어야 해요.
+# 끝나면 이 실행 화면의 Summary에 휴대폰으로 열 설치 링크가 나와요.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "preview = 휴대폰에 바로 까는 APK, production = 구글 플레이용 AAB"
+        default: preview
+        type: choice
+        options: [preview, production]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 토큰 확인
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "::error::저장소 Secrets에 EXPO_TOKEN이 없어요. expo.dev에서 토큰을 만들어 넣어 주세요."
+            exit 1
+          fi
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: Expo 프로젝트 연결 (처음 한 번)
+        run: |
+          if ! grep -q '"projectId"' app.json; then
+            eas init --non-interactive --force
+          fi
+
+      - name: 설치 파일 만들기
+        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --wait --json > build.json
+
+      - name: 설치 링크 알려 주기
+        run: |
+          URL=$(node -e "const b=require('./build.json');console.log((b[0]||b).artifacts?.buildUrl||'')")
+          PAGE=$(node -e "const b=require('./build.json');const x=b[0]||b;console.log('https://expo.dev/accounts/'+x.project.ownerAccount.name+'/projects/'+x.project.slug+'/builds/'+x.id)")
+          {
+            echo "## 아이고 설치 파일이 준비됐어요"
+            echo ""
+            echo "- 설치 파일: $URL"
+            echo "- 빌드 화면(휴대폰으로 열면 QR·설치 버튼이 있어요): $PAGE"
+            echo ""
+            echo "휴대폰에서 링크를 열고, '출처를 알 수 없는 앱 설치'를 한 번 허용하면 깔려요."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 프로젝트 연결 정보 저장
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain app.json)" ]; then
+            git config user.name "aigo-bot"
+            git config user.email "aigo-bot@users.noreply.github.com"
+            git add app.json
+            git commit -m "Expo 프로젝트 연결 정보 저장"
+            git push
+          fi
+
+permissions:
+  contents: write
