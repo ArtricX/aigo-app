@@ -48,9 +48,13 @@ jobs:
         run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --wait --json > build.json
 
       - name: 설치 링크 알려 주기
+        if: always()
         run: |
-          URL=$(node -e "const b=require('./build.json');console.log((b[0]||b).artifacts?.buildUrl||'')")
-          PAGE=$(node -e "const b=require('./build.json');const x=b[0]||b;console.log('https://expo.dev/accounts/'+x.project.ownerAccount.name+'/projects/'+x.project.slug+'/builds/'+x.id)")
+          cat build.json || true
+          URL=$(node -e "try{const b=require('./build.json');const x=Array.isArray(b)?b[0]:b;console.log(x?.artifacts?.buildUrl||x?.artifacts?.applicationArchiveUrl||'')}catch(e){console.log('')}")
+          ID=$(node -e "try{const b=require('./build.json');const x=Array.isArray(b)?b[0]:b;console.log(x?.id||'')}catch(e){console.log('')}")
+          OWNER=$(node -e "console.log(require('./app.json').expo.owner||'')")
+          PAGE="https://expo.dev/accounts/$OWNER/projects/aigo/builds/$ID"
           {
             echo "## 아이고 설치 파일이 준비됐어요"
             echo ""
