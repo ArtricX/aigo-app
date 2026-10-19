@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { WebMorningBanner } from '@/components/WebMorningBanner';
 import { AppProvider, useApp } from '@/lib/store';
 import '@/lib/notify';
 import { C } from '@/theme';
@@ -47,6 +48,7 @@ function Root() {
           <Stack.Screen name="onboarding" />
         </Stack.Protected>
       </Stack>
+      <WebMorningBanner />
     </>
   );
 }

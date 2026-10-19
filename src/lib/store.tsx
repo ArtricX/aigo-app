@@ -1,5 +1,6 @@
 // 설정과 저장한 소식은 로그인 없이 이 휴대폰 안에만 저장해요.
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { FONT_SCALES, type FontSizeName } from '@/theme';
@@ -51,7 +52,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const [s, v] = await Promise.all([AsyncStorage.getItem(K_SETTINGS), AsyncStorage.getItem(K_SAVED)]);
-        if (s) setSettings({ ...DEFAULTS, ...JSON.parse(s) });
+        if (s) {
+          const loaded = { ...DEFAULTS, ...JSON.parse(s) };
+          setSettings(loaded);
+          // 브라우저 미리보기는 창을 열 때마다 알림 시계를 다시 켜야 해요
+          if (Platform.OS === 'web' && loaded.notify) scheduleMorning(loaded.minutes).catch(() => {});
+        }
         if (v) setSaved(JSON.parse(v));
       } catch {
         // 저장된 값을 못 읽으면 기본값으로 시작해요.

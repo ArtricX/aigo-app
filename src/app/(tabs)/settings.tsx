@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 
@@ -63,6 +63,11 @@ export default function Settings() {
           </Pressable>
         )}
         <TimePicker minutes={settings.minutes} onChange={(m) => update({ minutes: m })} />
+        {Platform.OS === 'web' && (
+          <Txt size={13} color={C.sub} lh={1.5}>
+            브라우저 미리보기에서는 이 창을 열어 둔 동안만 정한 시각에 알림이 떠요. 실제 앱은 앱을 닫아도 알려 줘요.
+          </Txt>
+        )}
         {settings.minutes < 7 * 60 && (
           <Txt size={13} weight={700} color={C.warn} lh={1.5}>
             새 소식은 아침 7시에 올라와요. 7시 전에는 어제 소식이 와요.
