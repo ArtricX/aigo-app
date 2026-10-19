@@ -44,6 +44,16 @@ npx tsc --noEmit        # 타입 검사
 ```
 알림·오디오는 Expo Go가 아니라 개발 빌드(`npx eas-cli@latest build --profile development`)에서 확인해야 해요.
 
+## 웹 미리보기 (노트북에서 보기)
+주소: https://artricx.github.io/ailab/app/
+화면 구성과 이동을 보는 용도예요(알림·백그라운드 재생은 휴대폰에서 확인).
+고친 뒤 다시 올리려면:
+```bash
+EXPO_OFFLINE=1 npx expo export --platform web --output-dir dist
+# dist/ 내용을 ailab 저장소의 app/ 에 덮어쓰기 (metadata.json 제외)
+# app/archive, app/saved, app/settings, app/onboarding 에 index.html 복사 (새로 고침 대비)
+```
+
 ## 휴대폰에 시험 설치
 1. expo.dev에서 무료 가입 → Settings → Access tokens에서 토큰 만들기
 2. 이 저장소 Settings → Secrets and variables → Actions → New repository secret: 이름 `EXPO_TOKEN`, 값은 토큰

@@ -58,7 +58,8 @@
       ]
     ],
     "experiments": {
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/ailab/app"
     },
     "extra": {
       "router": {

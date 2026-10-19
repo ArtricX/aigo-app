@@ -4,7 +4,7 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppProvider, useApp } from '@/lib/store';
@@ -51,11 +51,18 @@ function Root() {
   );
 }
 
+// 웹 미리보기(노트북)에서는 가운데에 휴대폰 폭으로 보여 줘요.
+const webFrame = Platform.OS === 'web' ? { flex: 1, width: '100%' as const, maxWidth: 430, alignSelf: 'center' as const, overflow: 'hidden' as const } : { flex: 1 };
+
 export default function Layout() {
   return (
     <SafeAreaProvider>
       <AppProvider>
-        <Root />
+        <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#D5D7DB' : C.ground }}>
+          <View style={webFrame}>
+            <Root />
+          </View>
+        </View>
       </AppProvider>
     </SafeAreaProvider>
   );
