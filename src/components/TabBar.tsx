@@ -1,3 +1,4 @@
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,13 +14,8 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
   settings: { label: '설정', icon: 'sliders' },
 };
 
-type Props = {
-  state: { index: number; routes: { key: string; name: string }[] };
-  navigation: { navigate: (name: string) => void; emit: (e: { type: 'tabPress'; target: string; canPreventDefault: true }) => { defaultPrevented: boolean } };
-};
-
 // 아이콘만 두지 않고 글자를 함께 달아요. 선택은 굵기 대신 색으로만 구분해요.
-export function TabBar({ state, navigation }: Props) {
+export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { setHomeDay } = useApp();
   return (
@@ -46,8 +42,7 @@ export function TabBar({ state, navigation }: Props) {
             onPress={() => {
               // '오늘'은 어느 날을 보고 있든 오늘로 돌아와요.
               if (route.name === 'index') setHomeDay(0);
-              const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!on && !e.defaultPrevented) navigation.navigate(route.name);
+              if (!on) navigateToTab(route.key);
             }}
             style={{ flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <Icon

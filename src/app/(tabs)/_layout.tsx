@@ -6,8 +6,7 @@ import { C } from '@/theme';
 export default function TabsLayout() {
   return (
     <Tabs
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tabBar={(props) => <TabBar {...(props as any)} />}
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.ground } }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="archive" />
