@@ -295,7 +295,7 @@ export default function Briefing() {
           style={{
             position: 'absolute',
             right: 16,
-            bottom: (hasAudio ? 120 : 16) + insets.bottom,
+            bottom: (hasAudio ? 150 : 16) + insets.bottom,
             width: 52,
             height: 52,
             borderRadius: 26,

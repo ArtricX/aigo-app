@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
+import { SeekBar } from '@/components/SeekBar';
 import { Txt } from '@/components/Txt';
 import type { Story } from '@/lib/api';
 import { C } from '@/theme';
@@ -29,6 +30,8 @@ export function Player({ stories, current, autoPlay, bottomInset, onStoryChange,
   const playable = stories.map((s, i) => (s.audio ? i : -1)).filter((i) => i >= 0);
   const [track, setTrack] = useState(playable[0] ?? 0);
   const [speed, setSpeed] = useState(1);
+  const [scrub, setScrub] = useState<number | null>(null); // 막대를 끄는 동안의 위치
+  const [seekTo, setSeekTo] = useState<number | null>(null); // 손을 뗀 위치(초). 실제 재생 위치가 따라올 때까지 이 값을 보여 줘요
   const player = useAudioPlayer(stories[playable[0] ?? 0]?.audio?.url ?? null, { updateInterval: 300 });
   const status = useAudioPlayerStatus(player);
   const wantPlay = useRef(!!autoPlay);
@@ -94,18 +97,40 @@ export function Player({ stories, current, autoPlay, bottomInset, onStoryChange,
     player.setPlaybackRate(next);
   };
 
-  const pct = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
+  // 옮긴 위치에 실제 재생이 도착하면(1초 안쪽) 붙잡아 둔 값을 놓아요
+  useEffect(() => {
+    if (seekTo !== null && Math.abs(status.currentTime - seekTo) < 1) setSeekTo(null);
+  }, [status.currentTime, seekTo]);
+  useEffect(() => setSeekTo(null), [track]);
+  // 혹시 옮기기가 늦어져도 3초 뒤에는 실제 재생 위치를 보여 줘요
+  useEffect(() => {
+    if (seekTo === null) return;
+    const id = setTimeout(() => setSeekTo(null), 3000);
+    return () => clearTimeout(id);
+  }, [seekTo]);
+
+  const now = seekTo ?? status.currentTime;
+  const pct = status.duration > 0 ? Math.min(1, now / status.duration) : 0;
   const pos = playable.indexOf(track);
 
   return (
     <View style={{ backgroundColor: C.ink, paddingTop: 10, paddingHorizontal: 16, paddingBottom: bottomInset + 12, gap: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Txt size={13} weight={700} color="#BDBDBD">
-          {mmss(status.currentTime)}
+        <Txt size={13} weight={700} color={scrub !== null ? C.yellow : '#BDBDBD'} style={{ minWidth: 38 }}>
+          {mmss(scrub !== null ? scrub * status.duration : now)}
         </Txt>
-        <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: '#444444' }}>
-          <View style={{ width: `${pct * 100}%`, height: 5, borderRadius: 3, backgroundColor: C.yellow }} />
-        </View>
+        <SeekBar
+          value={pct}
+          disabled={!(status.duration > 0)}
+          label="재생 위치, 눌러서 옮기기"
+          onScrub={setScrub}
+          onSeek={(r) => {
+            if (!(status.duration > 0)) return;
+            const sec = Math.min(status.duration - 0.2, r * status.duration);
+            setSeekTo(sec);
+            player.seekTo(sec);
+          }}
+        />
         <Txt size={13} weight={700} color="#BDBDBD">
           {mmss(status.duration)}
         </Txt>
