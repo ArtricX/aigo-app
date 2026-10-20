@@ -17,7 +17,11 @@ export const PROVIDERS: { id: ProviderId; label: string }[] = [
   { id: 'google', label: '구글' },
 ];
 
-export const providerLabel = (id?: string | null) => PROVIDERS.find((p) => p.id === id)?.label ?? '';
+export const providerLabel = (id?: string | null) =>
+  id === 'email' ? '이메일' : (PROVIDERS.find((p) => p.id === id)?.label ?? '');
+
+// 메일 인증은 계정 서버만 있으면 돼요 (웹 미리보기에서도 돼요)
+export const emailReady = () => !!supabase;
 
 // 키를 받아 넣었는지 (안 넣었으면 버튼을 '준비 중'으로 보여요)
 export function isReady(id: ProviderId) {

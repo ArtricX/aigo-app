@@ -7,6 +7,8 @@ import { Cancelled, providerSignOut, signInWith, type ProviderId } from '@/lib/a
 import { supabase } from '@/lib/supabase';
 
 export type SignInResult = 'ok' | 'cancel' | 'error' | 'not-ready';
+// 메일 인증: wait = 너무 자주 보냄, wrong = 번호가 틀리거나 시간이 지남
+export type EmailResult = 'ok' | 'wait' | 'wrong' | 'error' | 'not-ready';
 
 type Ctx = {
   user: User | null;
@@ -14,6 +16,8 @@ type Ctx = {
   name?: string;
   busy: ProviderId | null; // 지금 로그인 중인 곳
   signIn: (id: ProviderId) => Promise<SignInResult>;
+  sendEmailCode: (email: string) => Promise<EmailResult>;
+  verifyEmailCode: (email: string, code: string) => Promise<EmailResult>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<boolean>;
 };
@@ -46,6 +50,23 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // 메일 인증: 주소로 6자리 번호를 보내요. 처음이면 계정을 새로 만들어요(따로 가입 단계 없음).
+  const sendEmailCode = useCallback(async (email: string): Promise<EmailResult> => {
+    if (!supabase) return 'not-ready';
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    if (!error) return 'ok';
+    console.warn('[메일 번호 보내기 실패]', error);
+    return error.status === 429 || /rate|seconds/i.test(error.message) ? 'wait' : 'error';
+  }, []);
+
+  const verifyEmailCode = useCallback(async (email: string, code: string): Promise<EmailResult> => {
+    if (!supabase) return 'not-ready';
+    const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' });
+    if (!error) return 'ok';
+    console.warn('[메일 번호 확인 실패]', error);
+    return error.status === 429 ? 'wait' : /expired|invalid|otp/i.test(error.message) || error.status === 403 ? 'wrong' : 'error';
+  }, []);
+
   const meta = user?.user_metadata ?? {};
   // 네이버는 계정 서버가 직접 만든 계정이라 login_with에 적어 둬요.
   const provider = (meta.login_with as string | undefined) ?? (user?.app_metadata?.provider as string | undefined);
@@ -70,8 +91,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [provider]);
 
   const value = useMemo<Ctx>(
-    () => ({ user, provider, name, busy, signIn, signOut, deleteAccount }),
-    [user, provider, name, busy, signIn, signOut, deleteAccount],
+    () => ({ user, provider, name, busy, signIn, sendEmailCode, verifyEmailCode, signOut, deleteAccount }),
+    [user, provider, name, busy, signIn, sendEmailCode, verifyEmailCode, signOut, deleteAccount],
   );
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }

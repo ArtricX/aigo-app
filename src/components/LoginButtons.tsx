@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, View } from 'react-native';
 
+import { EmailLogin } from '@/components/EmailLogin';
 import { Txt } from '@/components/Txt';
 import { useAccount } from '@/lib/account';
 import { isReady, PROVIDERS, type ProviderId } from '@/lib/auth/providers';
@@ -20,6 +21,7 @@ const K_LAST = 'aigo:lastProvider';
 export function LoginButtons({ onDone }: { onDone?: () => void }) {
   const { signIn, busy } = useAccount();
   const [last, setLast] = useState<string | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(K_LAST).then(setLast).catch(() => {});
@@ -85,9 +87,36 @@ export function LoginButtons({ onDone }: { onDone?: () => void }) {
           </Pressable>
         );
       })}
+      <Pressable
+        onPress={() => setEmailOpen(true)}
+        disabled={!!busy}
+        accessibilityRole="button"
+        style={{ minHeight: TOUCH, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+        <Txt size={15} color={C.sub}>
+          다른 방법:
+        </Txt>
+        <Txt size={15} weight={700} style={{ textDecorationLine: 'underline' }}>
+          이메일로 시작하기
+        </Txt>
+        {last === 'email' && (
+          <View style={{ backgroundColor: C.ink, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Txt size={12} weight={700} color={C.paper}>
+              지난번
+            </Txt>
+          </View>
+        )}
+      </Pressable>
+      <EmailLogin
+        visible={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        onDone={() => {
+          AsyncStorage.setItem(K_LAST, 'email').catch(() => {});
+          onDone?.();
+        }}
+      />
       {Platform.OS === 'web' && (
         <Txt size={13} color={C.sub} center lh={1.5}>
-          브라우저 미리보기에서는 로그인이 되지 않아요. 휴대폰 앱에서 확인해 주세요.
+          브라우저 미리보기에서는 카카오·네이버·구글 로그인이 되지 않아요. 휴대폰 앱에서 확인해 주세요.
         </Txt>
       )}
     </View>

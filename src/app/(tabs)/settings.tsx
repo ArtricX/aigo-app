@@ -59,7 +59,7 @@ function AccountCard() {
     <Card>
       <View style={{ gap: 2 }}>
         <Txt size={17} weight={700}>
-          {name ? `${name}님` : '로그인했어요'}
+          {name ? `${name}님` : (user.email ?? '로그인했어요')}
         </Txt>
         <Txt size={14} color={C.sub}>
           {providerLabel(provider) ? `${providerLabel(provider)}로 로그인했어요` : '로그인했어요'} · 저장한 소식이 계정에 함께 보관돼요
