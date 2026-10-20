@@ -1,7 +1,7 @@
 {
   "_설명": "로그인용 키. 모두 앱 안에 그대로 들어가는 공개용 값이에요(비밀 키·service_role 키는 절대 넣지 마세요). 빈 칸이면 그 로그인 버튼은 '준비 중'으로 보여요. 채우는 방법은 docs/login-setup.md",
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
+  "supabaseUrl": "https://nmnkslcupmamcobxvqqm.supabase.co",
+  "supabaseAnonKey": "sb_publishable_B7UmfG4etyeyWBcjlEugRA_Ct9qlQUu",
   "googleWebClientId": "",
   "googleIosUrlScheme": "",
   "kakaoNativeAppKey": "",
