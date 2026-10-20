@@ -58,7 +58,15 @@
    (안드로이드만 내는 동안엔 `googleIosUrlScheme`은 비워 둬요)
 
 ## 5. 이메일 인증번호 (Supabase만 있으면 돼요)
-1. **Authentication → Sign In / Providers → Email** 켜기 (기본으로 켜져 있어요). **Email OTP Length 6**, 만료 시간은 기본(1시간)이나 10분 정도로.
+⚠️ 2026년 6월부터 새 무료 프로젝트는 **메일 발송 서비스(SMTP)를 먼저 연결해야** 메일 문구를 바꿀 수 있어요. 순서: SMTP → 문구.
+
+1. **SMTP 연결** (도메인이 없을 땐 Gmail로)
+   - 아이고 전용 Gmail을 만들고 2단계 인증을 켠 뒤 https://myaccount.google.com/apppasswords 에서 앱 비밀번호(16자리) 만들기
+   - Supabase **Authentication → Emails → SMTP Settings** → Enable custom SMTP
+     - Sender email / Username: 그 Gmail 주소, Sender name: `아이고`
+     - Host `smtp.gmail.com`, Port `465`, Password: 앱 비밀번호
+   - Gmail은 하루 수백 통까지라 출시 초기용. 사용자가 늘면 내 도메인 + Resend 등으로 바꾸기
+   - 처음엔 메일이 시간당 약 30통으로 제한돼요 → **Authentication → Rate Limits**에서 조정
 2. **Authentication → Email Templates**의 **Magic Link**와 **Confirm signup** 두 개 모두, 링크 대신 번호가 보이게 바꾸기. 예:
    ```html
    <h2>아이고 인증번호</h2>
@@ -67,8 +75,7 @@
    <p>직접 요청하지 않았다면 이 메일은 무시해 주세요.</p>
    ```
    제목 예: `[아이고] 인증번호를 확인해 주세요`
-3. ⚠️ **메일 발송 서비스 연결이 꼭 필요해요.** Supabase 기본 발송은 시험용이라 **프로젝트 팀원 주소로만, 시간당 몇 통만** 보내져요. 실제 사용자에게 보내려면 **Authentication → Emails → SMTP Settings**에 발송 서비스를 연결해요.
-   - 추천: Resend (무료 하루 100통·월 3,000통). 보내는 주소용 **내 도메인**이 필요해요 (예: `artricx.com`, 1년 1~2만 원). github.io 주소로는 안 돼요.
+3. **Authentication → Sign In / Providers → Email**에서 **Email OTP Length 6** 확인
 4. 메일 주소는 **로그인 확인용**이에요. 이벤트·광고 메일은 따로 수신 동의를 받은 뒤에만 보낼 수 있어요.
 
 ## 서명 지문 (SHA-1 / 카카오 키 해시) 구하기
@@ -85,7 +92,7 @@
 - [ ] **개인정보처리방침**(블로그 `privacy.html`) 고치기: 받는 정보(닉네임·프로필 사진·로그인 회원번호, 구글·이메일 로그인 시 메일 주소), 쓰는 곳(저장한 소식 보관), 보관 기간(탈퇴 시 즉시 삭제), 맡기는 곳(Supabase)
 - [ ] **구글 플레이 데이터 보안 양식**: '계정 만들기 있음', '앱 안에서 계정 삭제 가능', 계정 삭제 안내 **웹 주소**도 필요 (개인정보처리방침에 '앱 > 설정 > 계정 지우기' 안내 넣고 그 주소 쓰기)
 - [ ] 네이버 **검수 요청**
-- [ ] 메일 발송 서비스(SMTP) 연결, 메일 문구 바꾸기
+- [ ] (도메인 마련 후) 메일 발송을 Gmail → 내 도메인 발송 서비스로 바꾸기
 - [ ] 휴대폰에서 네 가지 로그인 · 로그아웃 · 계정 지우기 · 휴대폰 바꿔 저장 소식 남는지 확인
 
 ## 새 설치 파일이 필요해요
