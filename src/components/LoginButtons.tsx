@@ -92,9 +92,6 @@ export function LoginButtons({ onDone }: { onDone?: () => void }) {
         disabled={!!busy}
         accessibilityRole="button"
         style={{ minHeight: TOUCH, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
-        <Txt size={15} color={C.sub}>
-          다른 방법:
-        </Txt>
         <Txt size={15} weight={700} style={{ textDecorationLine: 'underline' }}>
           이메일로 시작하기
         </Txt>
