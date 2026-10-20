@@ -7,15 +7,17 @@
 ## 화면 (v1)
 | 화면 | 파일 |
 |---|---|
-| 첫 실행 (인사 → 알림 허락 → 준비 끝) | `src/app/onboarding.tsx` |
+| 첫 실행 (인사 → 로그인 → 알림 허락 → 준비 끝) | `src/app/onboarding.tsx` |
 | 오늘 (홈, 날짜 이동은 목록 아래) | `src/app/(tabs)/index.tsx` |
 | 하루 브리핑 읽기 + 듣기 | `src/app/briefing/[date].tsx` |
 | 지난 브리핑 (주제별 고르기) | `src/app/(tabs)/archive.tsx` |
 | 저장한 소식 | `src/app/(tabs)/saved.tsx` |
-| 설정 (알림 시각·글자 크기) | `src/app/(tabs)/settings.tsx` |
+| 설정 (알림 시각·글자 크기·로그인) | `src/app/(tabs)/settings.tsx` |
 
 ## 원칙
-- **가입 없음.** 저장한 소식과 설정은 휴대폰 안(AsyncStorage)에만 둬요.
+- **로그인은 고르기.** 카카오·네이버·구글로 한 번에 시작하거나, 이메일 인증번호로 시작하거나, 로그인 없이 그냥 써도 돼요.
+  로그인하면 저장한 소식이 계정(Supabase)에도 보관돼요. 설정은 휴대폰 안(AsyncStorage)에만 둬요.
+  켜는 방법: [docs/login-setup.md](docs/login-setup.md) · 키는 `auth.keys.json`
 - **아침 알림은 휴대폰이 스스로** 정한 시각에 보내요(서버 푸시 아님). `src/lib/notify.ts`
 - **글자 굵기는 세 단계**: 400 본문 / 700 버튼·라벨 / 900 제목. 글꼴은 프리텐다드.
 - **한글은 단어 단위로 줄을 바꿔요** (`Txt` 컴포넌트가 처리).

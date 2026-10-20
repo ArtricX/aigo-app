@@ -8,6 +8,7 @@ import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { WebMorningBanner } from '@/components/WebMorningBanner';
+import { AccountProvider } from '@/lib/account';
 import { AppProvider, useApp } from '@/lib/store';
 import '@/lib/notify';
 import { C } from '@/theme';
@@ -59,6 +60,7 @@ const webFrame = Platform.OS === 'web' ? { flex: 1, width: '100%' as const, maxW
 export default function Layout() {
   return (
     <SafeAreaProvider>
+      <AccountProvider>
       <AppProvider>
         <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#D5D7DB' : C.ground }}>
           <View style={webFrame}>
@@ -66,6 +68,7 @@ export default function Layout() {
           </View>
         </View>
       </AppProvider>
+      </AccountProvider>
     </SafeAreaProvider>
   );
 }
