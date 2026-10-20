@@ -1,10 +1,13 @@
-// 설정과 저장한 소식은 로그인 없이 이 휴대폰 안에만 저장해요.
+// 설정과 저장한 소식은 휴대폰 안에 저장해요.
+// 로그인하면 저장한 소식은 계정에도 함께 보관해요(휴대폰을 바꿔도 남게). 설정은 휴대폰마다 따로예요.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { FONT_SCALES, type FontSizeName } from '@/theme';
+import { useAccount } from '@/lib/account';
 import { scheduleMorning, cancelMorning } from '@/lib/notify';
+import { supabase } from '@/lib/supabase';
 
 export type SavedStory = {
   date: string;
@@ -15,6 +18,29 @@ export type SavedStory = {
   thumb?: string;
   savedAt: number;
 };
+
+const keyOf = (x: { date: string; anchor: string }) => `${x.date}#${x.anchor}`;
+
+type Row = { date: string; anchor: string; tag: string; color: string; title: string; thumb: string | null; saved_at: string };
+const toRow = (x: SavedStory, user_id: string) => ({
+  user_id,
+  date: x.date,
+  anchor: x.anchor,
+  tag: x.tag,
+  color: x.color,
+  title: x.title,
+  thumb: x.thumb ?? null,
+  saved_at: new Date(x.savedAt).toISOString(),
+});
+const fromRow = (r: Row): SavedStory => ({
+  date: r.date,
+  anchor: r.anchor,
+  tag: r.tag,
+  color: r.color,
+  title: r.title,
+  thumb: r.thumb ?? undefined,
+  savedAt: Date.parse(r.saved_at) || Date.now(),
+});
 
 type Settings = {
   onboarded: boolean;
@@ -47,6 +73,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [saved, setSaved] = useState<SavedStory[]>([]);
   const [homeDay, setHomeDay] = useState(0);
+  const { user } = useAccount();
+  const userId = user?.id;
 
   useEffect(() => {
     (async () => {
@@ -65,6 +93,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReady(true);
     })();
   }, []);
+
+  // 로그인하면: 계정에 있던 것 + 이 휴대폰에 있던 것을 합쳐서 양쪽에 똑같이 맞춰요.
+  useEffect(() => {
+    if (!ready || !userId || !supabase) return;
+    let alive = true;
+    (async () => {
+      const { data, error } = await supabase.from('saved_stories').select('date,anchor,tag,color,title,thumb,saved_at');
+      if (error || !alive) return;
+      const remote = (data as Row[]).map(fromRow);
+      const remoteKeys = new Set(remote.map(keyOf));
+      setSaved((local) => {
+        const onlyLocal = local.filter((x) => !remoteKeys.has(keyOf(x)));
+        if (onlyLocal.length) {
+          supabase!.from('saved_stories').upsert(onlyLocal.map((x) => toRow(x, userId))).then(() => {});
+        }
+        const merged = [...remote, ...onlyLocal].sort((a, b) => b.savedAt - a.savedAt);
+        AsyncStorage.setItem(K_SAVED, JSON.stringify(merged)).catch(() => {});
+        return merged;
+      });
+    })().catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [ready, userId]);
 
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
@@ -90,9 +142,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ? prev.filter((x) => !(x.date === s.date && x.anchor === s.anchor))
         : [{ ...s, savedAt: Date.now() }, ...prev];
       AsyncStorage.setItem(K_SAVED, JSON.stringify(next)).catch(() => {});
+      if (userId && supabase) {
+        // 계정에도 똑같이 (인터넷이 끊겨 실패하면 다음 로그인 때 다시 맞춰요)
+        if (exists) supabase.from('saved_stories').delete().match({ date: s.date, anchor: s.anchor }).then(() => {});
+        else supabase.from('saved_stories').upsert(toRow(next[0], userId)).then(() => {});
+      }
       return next;
     });
-  }, []);
+  }, [userId]);
 
   const value = useMemo<Ctx>(
     () => ({
