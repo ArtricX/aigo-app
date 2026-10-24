@@ -57,12 +57,19 @@ jobs:
           [ -z "$ID" ] && { echo "::error::빌드 번호를 찾지 못했어요"; exit 0; }
           eas build:view "$ID" --json > view.json || true
           node -e "const v=require('./view.json');console.log('::error title=EAS 오류::'+JSON.stringify(v.error||{}).slice(0,1500))" || true
-          node -e "const v=require('./view.json');(v.logFiles||[]).forEach(u=>console.log(u))" > logurls.txt || true
+          # 로그 파일 주소 (필드 이름이 바뀔 수 있어 여러 곳을 찾아봐요)
+          node -e "const v=require('./view.json');const u=[...(v.logFiles||[]),...(v.artifacts?.logFiles||[])];console.log('::warning title=로그 파일 수::'+u.length+' keys='+Object.keys(v).join(','));u.forEach(x=>console.error(x))" 2> logurls.txt || true
           : > all.log
-          while read -r u; do curl -sL "$u" >> all.log || true; done < logurls.txt
-          # 오류 줄만 골라 화면(주석)에 찍기
-          grep -E "FAILURE|What went wrong|error:|Error:|Could not|> Task .* FAILED|e: " all.log | grep -v "^\s*$" | head -40 > errs.txt || true
+          while read -r u; do curl -sL --compressed "$u" -o one.log || true; (gunzip -c one.log 2>/dev/null || cat one.log) >> all.log; done < logurls.txt
+          echo "::warning title=로그 크기::$(wc -c < all.log) bytes"
+          # JSON 줄이면 msg만 꺼내기
+          node -e "const fs=require('fs');const out=fs.readFileSync('all.log','utf8').split('\n').map(l=>{try{return JSON.parse(l).msg??l}catch(e){return l}});fs.writeFileSync('plain.log',out.join('\n'))" || cp all.log plain.log
+          grep -nE "What went wrong|FAILURE|FAILED|error:|Error:|Could not|Unresolved|e: file|Execution failed" plain.log | head -60 > errs.txt || true
+          # 'What went wrong' 아래 몇 줄도 같이
+          grep -A12 "What went wrong" plain.log | head -40 >> errs.txt || true
           i=0; while IFS= read -r line; do i=$((i+1)); [ $i -gt 9 ] && break; echo "::error title=빌드 오류 $i::$(echo "$line" | cut -c1-900)"; done < errs.txt
+          W=$(grep -A12 "What went wrong" plain.log | head -14 | tr '\n' ' ' | cut -c1-3000)
+          [ -n "$W" ] && echo "::error title=What went wrong::$W"
           { echo "## 실패 원인 (자동 추출)"; echo '```'; cat errs.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 설치 링크 알려 주기
