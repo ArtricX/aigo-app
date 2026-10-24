@@ -51,7 +51,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // 메일 인증: 주소로 인증번호(6~8자리)를 보내요. 처음이면 계정을 새로 만들어요(따로 가입 단계 없음).
+  // 메일 인증: 주소로 6자리 번호를 보내요. 처음이면 계정을 새로 만들어요(따로 가입 단계 없음).
   const sendEmailCode = useCallback(async (email: string): Promise<EmailResult> => {
     if (!supabase) return 'not-ready';
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
