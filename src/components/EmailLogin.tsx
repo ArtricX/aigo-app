@@ -1,5 +1,5 @@
 // 이메일로 시작하기 (카카오·네이버·구글을 안 쓰는 분용)
-// 메일 주소 → 메일로 온 6자리 번호 넣기 → 끝. 비밀번호는 없어요.
+// 메일 주소 → 메일로 온 인증번호(6~8자리, 계정 서버 설정에 따름) 넣기 → 끝. 비밀번호는 없어요.
 // 처음 쓰는 주소면 그대로 가입되고, 쓰던 주소면 로그인돼요.
 // 받는 정보는 메일 주소 하나뿐이에요 (메일함 내용은 볼 수 없어요).
 import { useEffect, useRef, useState } from 'react';
@@ -13,6 +13,9 @@ import { emailReady } from '@/lib/auth/providers';
 import { C, F, TOUCH } from '@/theme';
 
 const RESEND_SEC = 60;
+// 인증번호 자릿수는 계정 서버(Supabase) 설정을 따라요. 6~8자리 모두 받아요.
+const CODE_MIN = 6;
+const CODE_MAX = 8;
 const looksLikeEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 
 const inputStyle = {
@@ -71,7 +74,7 @@ export function EmailLogin({ visible, onClose, onDone }: { visible: boolean; onC
   };
 
   const verify = async (value = code) => {
-    if (value.length < 6) return;
+    if (value.length < CODE_MIN) return;
     setBusy(true);
     setMsg(null);
     const r = await verifyEmailCode(email.trim(), value);
@@ -114,7 +117,7 @@ export function EmailLogin({ visible, onClose, onDone }: { visible: boolean; onC
           {step === 'email' ? (
             <>
               <Txt size={16} color="#444444" lh={1.6}>
-                {'메일 주소를 적으면 6자리 번호를 보내 드려요.\n비밀번호는 만들지 않아요.'}
+                {'메일 주소를 적으면 인증번호를 보내 드려요.\n비밀번호는 만들지 않아요.'}
               </Txt>
               <TextInput
                 value={email}
@@ -141,24 +144,26 @@ export function EmailLogin({ visible, onClose, onDone }: { visible: boolean; onC
           ) : (
             <>
               <Txt size={16} color="#444444" lh={1.6}>
-                {`${email.trim()}\n으로 보낸 6자리 번호를 넣어 주세요.`}
+                {`${email.trim()}\n으로 보낸 인증번호를 넣어 주세요.`}
               </Txt>
               <TextInput
                 ref={codeRef}
                 value={code}
                 onChangeText={(t) => {
-                  const v = t.replace(/\D/g, '').slice(0, 6);
+                  const v = t.replace(/\D/g, '').slice(0, CODE_MAX);
+                  const pasted = v.length - code.length > 1; // 붙여 넣기·자동 채우기
                   setCode(v);
-                  if (v.length === 6) verify(v); // 6자리를 다 넣으면 바로 확인
+                  // 끝까지 넣었거나, 번호를 통째로 붙여 넣었으면 바로 확인
+                  if (v.length === CODE_MAX || (pasted && v.length >= CODE_MIN)) verify(v);
                 }}
-                placeholder="000000"
+                placeholder="인증번호"
                 placeholderTextColor={C.faint}
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
-                maxLength={6}
-                accessibilityLabel="메일로 받은 6자리 번호"
-                style={[inputStyle, { fontFamily: F[900], fontSize: 28, letterSpacing: 8, textAlign: 'center' }]}
+                maxLength={CODE_MAX}
+                accessibilityLabel="메일로 받은 인증번호"
+                style={[inputStyle, { fontFamily: code ? F[900] : F[400], fontSize: code ? 28 : 20, letterSpacing: code ? 6 : 0, textAlign: 'center' }]}
               />
               {msg && (
                 <Txt size={14} weight={700} color={C.warn} lh={1.5}>
@@ -170,7 +175,7 @@ export function EmailLogin({ visible, onClose, onDone }: { visible: boolean; onC
                   <ActivityIndicator color={C.ink} />
                 </View>
               ) : (
-                <Btn label="확인" onPress={() => verify()} disabled={code.length < 6} />
+                <Btn label="확인" onPress={() => verify()} disabled={code.length < CODE_MIN} />
               )}
               <Txt size={13} color={C.sub} lh={1.5}>
                 메일이 안 보이면 스팸함도 확인해 주세요.
