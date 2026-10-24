@@ -65,6 +65,8 @@ export function EmailLogin({ visible, onClose, onDone }: { visible: boolean; onC
       setLeft(RESEND_SEC);
       setTimeout(() => codeRef.current?.focus(), 300);
     } else if (r === 'wait') setMsg('번호를 방금 보냈어요. 1분쯤 뒤에 다시 눌러 주세요.');
+    else if (r === 'mail') setMsg('지금 메일을 보낼 수 없어요. 잠시 뒤에 다시 해 주세요. (메일 발송 문제)');
+    else if (r === 'closed') setMsg('지금은 새로 가입할 수 없어요. 잠시 뒤에 다시 해 주세요. (가입 닫힘)');
     else setMsg('번호를 보내지 못했어요. 인터넷 연결을 확인해 주세요.');
   };
 

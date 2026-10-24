@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 
 export type SignInResult = 'ok' | 'cancel' | 'error' | 'not-ready';
 // 메일 인증: wait = 너무 자주 보냄, wrong = 번호가 틀리거나 시간이 지남
-export type EmailResult = 'ok' | 'wait' | 'wrong' | 'error' | 'not-ready';
+// mail = 계정 서버가 메일을 못 보냄(발송 설정 문제), closed = 새 가입이 꺼져 있음
+export type EmailResult = 'ok' | 'wait' | 'wrong' | 'mail' | 'closed' | 'error' | 'not-ready';
 
 type Ctx = {
   user: User | null;
@@ -55,8 +56,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     if (!supabase) return 'not-ready';
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     if (!error) return 'ok';
-    console.warn('[메일 번호 보내기 실패]', error);
-    return error.status === 429 || /rate|seconds/i.test(error.message) ? 'wait' : 'error';
+    console.warn('[메일 번호 보내기 실패]', error.status, error.code, error.message);
+    const m = `${error.code ?? ''} ${error.message ?? ''}`;
+    if (error.status === 429 || /rate|seconds/i.test(m)) return 'wait';
+    if (/signup.*(disabled|not allowed)/i.test(m)) return 'closed';
+    if (/sending|smtp|email.*(send|deliver)|unexpected_failure/i.test(m) || (error.status ?? 0) >= 500) return 'mail';
+    return 'error';
   }, []);
 
   const verifyEmailCode = useCallback(async (email: string, code: string): Promise<EmailResult> => {

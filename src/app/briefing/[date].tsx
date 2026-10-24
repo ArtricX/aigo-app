@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { Player } from '@/components/Player';
+import { useSaveLoginNudge } from '@/components/SaveLoginNudge';
 import { Txt } from '@/components/Txt';
 import { ErrorBox, Loading, TagPill } from '@/components/ui';
 import { dateLabel, shortDate, type Story } from '@/lib/api';
@@ -31,6 +32,7 @@ export default function Briefing() {
   const { data: day, loading, reload } = useDay(date);
   const { data: days } = useDays();
   const { settings, update, isSaved, toggleSave } = useApp();
+  const { afterSave, nudge } = useSaveLoginNudge();
 
   const scroller = useRef<ScrollViewInstance>(null);
   const offsets = useRef<number[]>([]);
@@ -199,7 +201,10 @@ export default function Briefing() {
               )}
               <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
                 <Pressable
-                  onPress={() => toggleSave({ date: day.date, anchor: s.anchor, tag: s.tag, color: s.color, title: s.title, thumb: s.image })}
+                  onPress={() => {
+                    toggleSave({ date: day.date, anchor: s.anchor, tag: s.tag, color: s.color, title: s.title, thumb: s.image });
+                    if (!saved) afterSave(); // 처음 저장할 때 한 번만 로그인 안내
+                  }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: saved }}
                   style={{ flex: 1, minHeight: 52, borderRadius: 14, backgroundColor: saved ? C.yellow : C.ground, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -317,6 +322,7 @@ export default function Briefing() {
           </Txt>
         </Pressable>
       )}
+      {nudge}
     </View>
   );
 }
