@@ -7,6 +7,12 @@ import keys from './auth.keys.json';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const plugins = [...(config.plugins ?? [])];
 
+  // 카카오 로그인 부품은 카카오 전용 저장소에서 내려받아요 (키가 없어도 부품은 함께 들어가서 항상 필요).
+  plugins.push([
+    'expo-build-properties',
+    { android: { extraMavenRepos: ['https://devrepo.kakao.com/nexus/content/groups/public/'] } },
+  ]);
+
   if (keys.kakaoNativeAppKey) {
     // 카카오톡이 없는 휴대폰에서 카카오 계정으로 로그인한 뒤 앱으로 돌아오는 길(authCodeHandlerActivity)
     plugins.push([
