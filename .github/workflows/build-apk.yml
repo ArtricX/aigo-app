@@ -47,6 +47,24 @@ jobs:
       - name: 설치 파일 만들기
         run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --wait --json > build.json
 
+      - name: 실패 원인 알려 주기
+        if: failure()
+        run: |
+          ID=$(node -e "try{const b=require('./build.json');const x=Array.isArray(b)?b[0]:b;console.log(x?.id||'')}catch(e){console.log('')}")
+          if [ -z "$ID" ]; then
+            ID=$(eas build:list --platform android --limit 1 --json --non-interactive | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s)[0].id)}catch(e){console.log('')}})")
+          fi
+          [ -z "$ID" ] && { echo "::error::빌드 번호를 찾지 못했어요"; exit 0; }
+          eas build:view "$ID" --json > view.json || true
+          node -e "const v=require('./view.json');console.log('::error title=EAS 오류::'+JSON.stringify(v.error||{}).slice(0,1500))" || true
+          node -e "const v=require('./view.json');(v.logFiles||[]).forEach(u=>console.log(u))" > logurls.txt || true
+          : > all.log
+          while read -r u; do curl -sL "$u" >> all.log || true; done < logurls.txt
+          # 오류 줄만 골라 화면(주석)에 찍기
+          grep -E "FAILURE|What went wrong|error:|Error:|Could not|> Task .* FAILED|e: " all.log | grep -v "^\s*$" | head -40 > errs.txt || true
+          i=0; while IFS= read -r line; do i=$((i+1)); [ $i -gt 9 ] && break; echo "::error title=빌드 오류 $i::$(echo "$line" | cut -c1-900)"; done < errs.txt
+          { echo "## 실패 원인 (자동 추출)"; echo '```'; cat errs.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
       - name: 설치 링크 알려 주기
         if: always()
         run: |
